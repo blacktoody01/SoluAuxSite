@@ -1,0 +1,79 @@
+# Site institucional SoluAux — gerenciado pelo AdminGestor (Iniciar/Parar/Atualizar/.env/Testes).
+# Sem portas publicadas: o acesso é só pelo Caddy (soluaux_caddy) na rede soluaux_proxy.
+services:
+  site:
+    build:
+      context: .
+      target: app
+    image: soluaux-site:latest
+    container_name: soluaux_site
+    restart: unless-stopped
+    environment:
+      WHATSAPP_NUMERO: ${WHATSAPP_NUMERO:-}
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 100
+    networks:
+      - soluaux_proxy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ---- Testes (só sobem com --profile test; nunca tocam na produção) ----
+  app-test:
+    profiles: ["test"]
+    build:
+      context: .
+      target: app
+    image: soluaux-site:teste
+    restart: "no"
+    environment:
+      WHATSAPP_NUMERO: "5563999999999"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz >/dev/null || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  tests:
+    profiles: ["test"]
+    build:
+      context: .
+      target: test
+    image: soluaux-site-tests:teste
+    restart: "no"
+    depends_on:
+      app-test:
+        condition: service_healthy
+    environment:
+      TEST_BASE_URL: http://app-test:8080
+      TEST_WHATSAPP: "5563999999999"
+    networks:
+      - default
+
+networks:
+  soluaux_proxy:
+    external: true
+    name: soluaux_proxy
