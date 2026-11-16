@@ -1,6 +1,6 @@
 # SoluAux — site institucional (soluaux.com.br)
 
-Landing page da SoluAux: sistemas (Açaí & Delivery, Gestor Rural, SoluFinance), sistema sob medida, diferenciais e contato.
+Landing page da SoluAux: sistema de pedidos para açaiterias e sorveterias, ajustes sob medida, diferenciais e contato.
 
 ## Como roda
 
